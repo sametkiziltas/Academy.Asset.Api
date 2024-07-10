@@ -14,12 +14,16 @@ public class EFCoreAssetRepository : IAssetRepository
 
     public async Task<Domain.Asset?> GetAssetAsync(Guid id)
     {
-        return await _context.Assets.FindAsync(id);
+        return await _context.Assets
+            .Include(x => x.Tag)
+            .FirstOrDefaultAsync(x => x.Id == id);
     }
 
     public async Task<List<Domain.Asset>> GetAssets()
     {
-        return await _context.Assets.ToListAsync();
+        return await _context.Assets
+            .Include(x => x.Tag)
+            .ToListAsync();
     }
 
     public async Task AddAssetAsync(Domain.Asset asset)

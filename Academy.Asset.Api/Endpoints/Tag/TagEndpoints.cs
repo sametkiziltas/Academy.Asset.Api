@@ -8,14 +8,16 @@ public static class TagEndpoints
 {
     public static void MapTagEndpoints(this WebApplication app)
     {
-        app.MapGet("/tags", (ITagRepository repository) =>
+        app.MapGet("/tags",
+            async (ITagRepository repository) =>
         {
-            return repository.GetTags();
+            return await repository.GetTags();
         });
 
-        app.MapGet("/tags/{id}", (Guid id, ITagRepository repository) =>
+        app.MapGet("/tags/{id}",
+            async (Guid id, ITagRepository repository) =>
         {
-            return repository.GetTag(id);
+            return await repository.GetTagAsync(id);
         });
 
         app.MapPost("/tags", async (IValidator<TagDto> validator, TagDto tagDto, ITagRepository repository) =>
@@ -33,20 +35,21 @@ public static class TagEndpoints
                 Name = tagDto.Name
             };
     
-            repository.AddTag(tag);
+            await repository.AddTagAsync(tag);
             
             return Results.Created($"/tags/{tag.Id}", tagDto);
         });
 
-        app.MapDelete("/tags/{id}", (Guid id, ITagRepository repository) =>
+        app.MapDelete("/tags/{id}",
+            async (Guid id, ITagRepository repository) =>
         {
-            var tag = repository.GetTag(id);
+            var tag = await repository.GetTagAsync(id);
             if (tag is null)
             {
                 return Results.NotFound();
             }
 
-            repository.RemoveTag(tag);
+            await repository.RemoveTagAsync(tag);
             
             return Results.NoContent();
         });

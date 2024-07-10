@@ -4,8 +4,9 @@ using Domain;
 
 public interface ITagRepository
 {
-    Tag? GetTag(Guid id);
-    List<Tag> GetTags();
-    void AddTag(Tag tag);
-    void RemoveTag(Tag tag);
+    Task<Tag?> GetTagAsync(Guid id);
+    Task<List<Tag>> GetTags();
+    Task AddTagAsync(Tag tag);
+    Task RemoveTagAsync(Tag tag);
+    Task UpdateTagAsync(Tag tag);
 }

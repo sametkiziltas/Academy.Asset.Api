@@ -6,23 +6,32 @@ public class InMemoryAssetRepository : IAssetRepository
 {
     private readonly List<Asset> _assets = new List<Asset>();
 
-    public Asset? GetAsset(Guid id)
+    public Task<Asset?> GetAssetAsync(Guid id)
     {
-        return _assets.Find(x => x.Id == id);
+        return Task.FromResult(_assets.Find(x => x.Id == id));
     }
 
-    public List<Domain.Asset> GetAssets()
+    public Task<List<Asset>> GetAssets()
     {
-        return _assets;
+        return Task.FromResult(_assets);
     }
 
-    public void AddAsset(Asset asset)
+    public Task AddAssetAsync(Asset asset)
     {
         _assets.Add(asset);
+        
+        return Task.CompletedTask;
     }
 
-    public void RemoveAsset(Asset asset)
+    public Task RemoveAsset(Asset asset)
     {
         _assets.Remove(asset);
+        
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAssetAsync(Asset asset)
+    {
+        throw new NotImplementedException();
     }
 }

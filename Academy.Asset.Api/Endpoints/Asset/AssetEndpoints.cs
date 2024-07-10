@@ -21,7 +21,7 @@ public static class AssetEndpoints
 
         app.MapGet(
             "/assets/{id}",
-            (Guid id, IAssetRepository repository) => { return repository.GetAsset(id); });
+            (Guid id, IAssetRepository repository) => { return repository.GetAssetAsync(id); });
 
         app.MapPost(
             "/assets",
@@ -36,7 +36,7 @@ public static class AssetEndpoints
 
                 if (assetDto.TagId.HasValue)
                 {
-                    Tag? tag = tagRepository.GetTag(assetDto.TagId.Value);
+                    Tag? tag = await tagRepository.GetTagAsync(assetDto.TagId.Value);
 
                     if (tag is null)
                     {
@@ -55,7 +55,7 @@ public static class AssetEndpoints
                     TagId = assetDto.TagId
                 };
 
-                assetRepository.AddAsset(asset);
+                await assetRepository.AddAssetAsync(asset);
 
                 return Results.Created($"/assets/{asset.Id}", asset);
             });
@@ -78,7 +78,7 @@ public static class AssetEndpoints
 
                 if (assetDto.TagId.HasValue)
                 {
-                    Tag? tag = tagRepository.GetTag(assetDto.TagId.Value);
+                    Tag? tag = await tagRepository.GetTagAsync(assetDto.TagId.Value);
 
                     if (tag is null)
                     {
@@ -86,7 +86,7 @@ public static class AssetEndpoints
                     }
                 }
 
-                var existingAsset = assetRepository.GetAsset(id);
+                var existingAsset = await assetRepository.GetAssetAsync(id);
                 if (existingAsset is null)
                 {
                     return Results.NotFound();
@@ -103,14 +103,16 @@ public static class AssetEndpoints
                 existingAsset.Status = assetDto.Status;
                 existingAsset.TagId = assetDto.TagId;
 
+                await assetRepository.UpdateAssetAsync(existingAsset);
+
                 return Results.Ok(existingAsset);
             });
 
         app.MapDelete(
             "/assets/{id}",
-            (Guid id, IAssetRepository assetRepository) =>
+            async (Guid id, IAssetRepository assetRepository) =>
             {
-                Asset? existingAsset = assetRepository.GetAsset(id);
+                Asset? existingAsset = await assetRepository.GetAssetAsync(id);
 
                 if (existingAsset is null)
                 {

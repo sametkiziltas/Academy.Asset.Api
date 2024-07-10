@@ -1,5 +1,6 @@
 using Academy.Asset.Api.Domain;
 using Academy.Asset.Api.Domain.Enums;
+using Academy.Asset.Api.Dtos;
 using Academy.Asset.Api.Infrastructure;
 using Academy.Asset.Api.Validators;
 using FluentValidation;
@@ -14,8 +15,8 @@ builder.Services.AddAcademyProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IValidator<Asset>, AssetValidator>();
-builder.Services.AddScoped<IValidator<Tag>, TagValidator>();
+builder.Services.AddScoped<IValidator<AssetDto>, AssetValidator>();
+builder.Services.AddScoped<IValidator<TagDto>, TagValidator>();
 
 var app = builder.Build();
 
@@ -85,25 +86,45 @@ app.MapGet("/assets/{id}", (Guid id) =>
     return assets.FirstOrDefault(a => a.Id == id);
 });
 
-app.MapPost("/assets", async (IValidator<Asset> validator, Asset asset) =>
+app.MapPost("/assets", async (IValidator<AssetDto> validator, AssetDto assetDto) =>
 {
-    var validationResult = await validator.ValidateAsync(asset);
+    var validationResult = await validator.ValidateAsync(assetDto);
+
+    if (!validationResult.IsValid) {
+        return Results.ValidationProblem(validationResult.ToDictionary());
+    }
+
+    if (!tags.Any(x => x.Id == assetDto.TagId))
+    {
+        return Results.NotFound("Tag not found");
+    }
+
+    var asset = new Asset()
+    {
+        Id = Guid.NewGuid(),
+        Category = assetDto.Category,
+        Brand = assetDto.Brand,
+        Model = assetDto.Model,
+        SerialNo = assetDto.SerialNo,
+        Status = assetDto.Status,
+        TagId = assetDto.TagId
+    };
+    
+    assets.Add(asset);
+    return Results.Created($"/assets/{asset.Id}", asset);
+});
+
+app.MapPut("/assets/{id}", async (IValidator<AssetDto> validator, Guid id, AssetDto assetDto) =>
+{
+    var validationResult = await validator.ValidateAsync(assetDto);
 
     if (!validationResult.IsValid) {
         return Results.ValidationProblem(validationResult.ToDictionary());
     }
     
-    asset.Id = Guid.NewGuid();
-    assets.Add(asset);
-    return Results.Created($"/assets/{asset.Id}", asset);
-});
-
-app.MapPut("/assets/{id}", async (IValidator<Asset> validator, Guid id, Asset asset) =>
-{
-    var validationResult = await validator.ValidateAsync(asset);
-
-    if (!validationResult.IsValid) {
-        return Results.ValidationProblem(validationResult.ToDictionary());
+    if (!tags.Any(x => x.Id == assetDto.TagId))
+    {
+        return Results.NotFound("Tag not found");
     }
     
     var existingAsset = assets.FirstOrDefault(a => a.Id == id);
@@ -113,14 +134,14 @@ app.MapPut("/assets/{id}", async (IValidator<Asset> validator, Guid id, Asset as
         return Results.NotFound();
     }
     
-    BusinessException.ThrowIfTrue(ErrorMessages.AssetMustNotBeDown, existingAsset.Status == Status.Down && existingAsset.Tag.Id != asset.Tag.Id);
+    BusinessException.ThrowIfTrue(ErrorMessages.AssetMustNotBeDown, existingAsset.Status == Status.Down && existingAsset.Tag.Id != assetDto.TagId);
 
-    existingAsset.Category = asset.Category;
-    existingAsset.Brand = asset.Brand;
-    existingAsset.Model = asset.Model;
-    existingAsset.SerialNo = asset.SerialNo;
-    existingAsset.Status = asset.Status;
-    existingAsset.Tag = asset.Tag;
+    existingAsset.Category = assetDto.Category;
+    existingAsset.Brand = assetDto.Brand;
+    existingAsset.Model = assetDto.Model;
+    existingAsset.SerialNo = assetDto.SerialNo;
+    existingAsset.Status = assetDto.Status;
+    existingAsset.TagId = assetDto.TagId;
 
     return Results.Ok(existingAsset);
 });
@@ -149,17 +170,23 @@ app.MapGet("/tags/{id}", (Guid id) =>
     return tags.FirstOrDefault(t => t.Id == id);
 });
 
-app.MapPost("/tags", async (IValidator<Tag> validator, Tag tag) =>
+app.MapPost("/tags", async (IValidator<TagDto> validator, TagDto tagDto) =>
 {
-    var validationResult = await validator.ValidateAsync(tag);
+    var validationResult = await validator.ValidateAsync(tagDto);
 
     if (!validationResult.IsValid) {
         return Results.ValidationProblem(validationResult.ToDictionary());
     }
 
-    tag.Id = Guid.NewGuid();
+    var tag = new Tag()
+    {
+        Id = Guid.NewGuid(),
+        MacAddress = tagDto.MacAddress,
+        Name = tagDto.Name
+    };
+    
     tags.Add(tag);
-    return Results.Created($"/tags/{tag.Id}", tag);
+    return Results.Created($"/tags/{tag.Id}", tagDto);
 });
 
 app.MapDelete("/tags/{id}", (Guid id) =>

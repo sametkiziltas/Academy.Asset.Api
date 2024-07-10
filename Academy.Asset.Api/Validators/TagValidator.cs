@@ -1,10 +1,11 @@
 ﻿using System.Text.RegularExpressions;
 using Academy.Asset.Api.Domain;
+using Academy.Asset.Api.Dtos;
 using FluentValidation;
 
 namespace Academy.Asset.Api.Validators;
 
-public class TagValidator : AbstractValidator<Tag>
+public class TagValidator : AbstractValidator<TagDto>
 {
     public TagValidator()
     {
